@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 from pathlib import Path
 import os
 import sys
@@ -7,8 +9,8 @@ import yaml
 import tomllib
 
 
-APP_NAME = "nightreign-overlay-helper"
-APP_NAME_CHS = "黑夜君临悬浮助手"
+APP_NAME = "nightreign-overlay-helper-plus"
+APP_NAME_CHS = "黑夜君临悬浮助手 · 自动增强版"
 
 def get_version() -> str:
     """从 pyproject.toml 读取版本号，自动适配源码和 PyInstaller 打包环境"""
@@ -34,14 +36,25 @@ APP_AUTHOR = "NeuraXmy"
 GAME_WINDOW_TITLE = "ELDEN RING NIGHTREIGN"
 
 
+def resource_path(path: str) -> str:
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+    if getattr(sys, "frozen", False):
+        external = Path(sys.executable).parent / path
+        if external.is_file():
+            return str(external)
+    return str(base / path)
+
+
 def get_asset_path(path: str) -> str:
-    return str(Path("assets") / path)
+    return resource_path(str(Path("assets") / path))
 
 def get_data_path(path: str) -> str:
-    return str(Path("data") / path)
+    return resource_path(str(Path("data") / path))
 
 def get_appdata_path(filename: str) -> str:
-    if appdata := os.getenv("APPDATA"):
+    if override := os.getenv("NROH_DATA_DIR"):
+        app_data_dir = Path(override)
+    elif appdata := os.getenv("APPDATA"):
         app_data_dir = Path(appdata) / APP_NAME
     else:
         app_data_dir = Path(user_data_dir(appname=APP_NAME, appauthor=APP_AUTHOR))
@@ -90,4 +103,3 @@ def save_yaml(path: str, data: dict):
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
-

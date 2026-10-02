@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QProgressBar, QLabel, QHBoxLayout, QSizePolicy
@@ -6,11 +8,12 @@ from PyQt6.QtGui import QMouseEvent, QKeySequence, QKeyEvent
 from dataclasses import dataclass, field
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 from PyQt6.QtGui import QColor
+import time
 
 from src.common import APP_FULLNAME, APP_AUTHOR
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top
+from src.ui.utils import set_widget_always_on_top, exclude_widget_from_capture
 
 
 INITIAL_TEXT = f"{APP_FULLNAME} (右键打开菜单)"
@@ -39,6 +42,9 @@ class OverlayUIState:
 
     set_x_to_center: bool = False
     map_pattern_match_text: str | None = None
+    map_status_text: str | None = None
+    map_status_kind: str | None = None
+    map_status_time: float | None = None
     hide_text: bool | None = None
 
     only_show_when_game_foreground: bool | None = None
@@ -61,6 +67,7 @@ class OverlayWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         set_widget_always_on_top(self)
+        exclude_widget_from_capture(self)
         self.startTimer(50)
 
         self.scale = 1.0
@@ -91,6 +98,13 @@ class OverlayWidget(QWidget):
         shadow_effect.setOffset(0, 0) 
         self.day_label.setGraphicsEffect(shadow_effect)
         self.layout.addWidget(self.day_label)
+        self.map_status_label = QLabel()
+        self.map_status_label.setWordWrap(True)
+        self.map_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.map_status_text = ""
+        self.map_status_kind = "waiting"
+        self.map_status_time = 0.0
+        self.layout.addWidget(self.map_status_label)
 
         self.rain_pb = QProgressBar()
         self.rain_pb.setTextVisible(False)
@@ -190,13 +204,14 @@ class OverlayWidget(QWidget):
     def _apply_scale(self, scale: float):
         self.scale = scale
         width = int(400 * scale)
-        height = int(140 * scale)
+        height = int(175 * scale)
         self.setFixedSize(width, height)
 
         font_size = int(14 * scale)
         self.day_label.setStyleSheet(self.day_text_css.replace("{font_size}", str(font_size)))
         self.rain_label.setStyleSheet(self.rain_text_css.replace("{font_size}", str(font_size)))
         self.art_label.setStyleSheet(self.art_text_css.replace("{font_size}", str(font_size)))
+        self._update_map_status_label()
 
         pb_height = int(16 * scale)
         pb_border_radius = int(pb_height / 5)
@@ -212,6 +227,13 @@ class OverlayWidget(QWidget):
         self.art_pb.setStyleSheet(self.art_pb_css.replace("{border_radius}", str(pb_border_radius)).replace("{color}", self.art_color))
 
     def update_ui_state(self, state: OverlayUIState):
+        if state.map_status_text is not None:
+            self.map_status_text = state.map_status_text
+        if state.map_status_kind is not None:
+            self.map_status_kind = state.map_status_kind
+        if state.map_status_time is not None:
+            self.map_status_time = state.map_status_time
+        self._update_map_status_label()
         if state.x is not None and state.y is not None:
             self.move(state.x, state.y)
         if state.set_x_to_center:
@@ -266,7 +288,23 @@ class OverlayWidget(QWidget):
             self.hide_text = state.hide_text
         self.update()
 
+    def _update_map_status_label(self):
+        text = self.map_status_text
+        if self.map_status_time > 0:
+            seconds = max(0, int(time.time() - self.map_status_time))
+            if self.map_status_kind in ("scanning", "refreshing"):
+                text += f" · 已用 {seconds} 秒"
+            elif self.map_status_kind in ("success", "uncertain", "cached", "cached_failed"):
+                text += f" · {seconds} 秒前更新"
+        colors = {"waiting": "#c7c7c7", "disabled": "#c7c7c7", "scanning": "#86c9ff",
+                  "refreshing": "#86c9ff", "cached": "#9be2a4", "cached_failed": "#ffd27a",
+                  "success": "#9be2a4", "uncertain": "#ffd27a", "interrupted": "#ffd27a", "failed": "#ff9b9b"}
+        self.map_status_label.setText(text)
+        self.map_status_label.setStyleSheet(f"color: {colors.get(self.map_status_kind, '#ffffff')}; background: rgba(24,24,30,190); border-radius: 4px; padding: 3px; font-size: {max(8, int(12*self.scale))}px;")
+        self.map_status_label.setVisible(bool(text))
+
     def timerEvent(self, event):
+        self._update_map_status_label()
         visible = self.visible and self.windowOpacity() > 0.01
         if self.only_show_when_game_foreground:
             visible = visible and (self.is_game_foreground or self.is_menu_opened or self.is_setting_opened)
@@ -299,4 +337,3 @@ class OverlayWidget(QWidget):
             self.art_pb.show()
         else:
             self.art_pb.hide()
-

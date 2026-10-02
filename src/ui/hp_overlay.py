@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QProgressBar, QLabel, QHBoxLayout, QSizePolicy
@@ -10,7 +12,7 @@ from PyQt6.QtGui import QColor
 from src.common import APP_FULLNAME, APP_AUTHOR
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top, mss_region_to_qt_region
+from src.ui.utils import set_widget_always_on_top, mss_region_to_qt_region, exclude_widget_from_capture
 
 
 @dataclass
@@ -41,6 +43,7 @@ class HpOverlayWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         set_widget_always_on_top(self)
+        exclude_widget_from_capture(self)
         self.startTimer(50)
 
         self.hpbar_region: tuple[int] = (0, 0, 10, 10)

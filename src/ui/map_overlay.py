@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 from PyQt6.QtCore import Qt, QPoint, pyqtSignal, QRect
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QProgressBar, 
@@ -16,7 +18,7 @@ import glob
 from src.common import get_readable_timedelta, get_data_path, load_yaml
 from src.config import Config
 from src.logger import info, warning, error
-from src.ui.utils import set_widget_always_on_top, is_window_in_foreground, mss_region_to_qt_region
+from src.ui.utils import set_widget_always_on_top, is_window_in_foreground, mss_region_to_qt_region, exclude_widget_from_capture
 from src.detector.utils import draw_text
 
 
@@ -33,6 +35,9 @@ class MapOverlayUIState:
     clear_image: bool = False
     map_pattern_matching: bool | None = None
     map_pattern_match_time: float | None = None
+    automatic_status: str | None = None
+    map_status_kind: str | None = None
+    scan_started_time: float | None = None
 
     only_show_when_game_foreground: bool | None = None
     is_game_foreground: bool | None = None
@@ -51,6 +56,7 @@ class MapOverlayWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         set_widget_always_on_top(self)
+        self.capture_excluded = exclude_widget_from_capture(self)
         self.startTimer(50)
 
         # 悬浮地图信息
@@ -58,6 +64,9 @@ class MapOverlayWidget(QWidget):
         self.overlay_images: list[Image.Image] | None = None
         self.map_pattern_match_time: float = 0.0
         self.map_pattern_matching: bool = False
+        self.automatic_status = "等待打开完整地图"
+        self.map_status_kind = "waiting"
+        self.scan_started_time = 0.0
 
         self.overlay_image_box = QLabel(self)
         self.overlay_image_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -270,6 +279,12 @@ class MapOverlayWidget(QWidget):
             self.map_pattern_matching = state.map_pattern_matching
         if state.map_pattern_match_time is not None:
             self.map_pattern_match_time = state.map_pattern_match_time
+        if state.automatic_status is not None:
+            self.automatic_status = state.automatic_status
+        if state.map_status_kind is not None:
+            self.map_status_kind = state.map_status_kind
+        if state.scan_started_time is not None:
+            self.scan_started_time = state.scan_started_time
         if state.display_crystal_layout is not None:
             self.crystal_layout_idx = 0 if state.display_crystal_layout else None
             self.update_crystal_layout()
@@ -310,12 +325,17 @@ class MapOverlayWidget(QWidget):
         match_time_text = ""
         if self.map_pattern_matching:
             spin_line = ['|', '/', '-', '\\'][int(time.time() * 4) % 4]
-            match_time_text = f"正在识别中... {spin_line}"
+            seconds = max(0, int(time.time() - self.scan_started_time)) if self.scan_started_time else 0
+            match_time_text = f"正在识别中... {spin_line} · 已用 {seconds} 秒"
+            if self.map_pattern_match_time > 0:
+                age = max(0, int(time.time() - self.map_pattern_match_time))
+                match_time_text += f"\n当前显示 {age} 秒前的信息"
         elif self.map_pattern_match_time > 0:
             elapsed = time.time() - self.map_pattern_match_time
             match_time_text = f"识别时间：{get_readable_timedelta(timedelta(seconds=elapsed))}前"
-        self.match_time_label.setText(match_time_text)
-        self.match_time_label.setStyleSheet(f"color: white; font-size: {font_size}px;")
+        self.match_time_label.setText(self.automatic_status + ("\n" + match_time_text if match_time_text else ""))
+        colors = {"success": "#9be2a4", "cached": "#9be2a4", "cached_failed": "#ffd27a", "refreshing": "#86c9ff", "uncertain": "#ffd27a", "scanning": "#86c9ff", "failed": "#ff9b9b", "interrupted": "#ffd27a"}
+        self.match_time_label.setStyleSheet(f"color: {colors.get(self.map_status_kind, 'white')}; font-size: {font_size}px;")
 
         # 更新透明度
         threshold = 0.01
@@ -336,6 +356,3 @@ class MapOverlayWidget(QWidget):
             self.show()
         elif not visible and self.isVisible():
             self.hide()
-
-
-

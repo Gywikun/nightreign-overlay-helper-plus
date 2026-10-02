@@ -1,6 +1,24 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 from PyQt6.QtWidgets import QWidget, QApplication
 from PyQt6.QtCore import Qt
 from src.logger import info, warning, error
+
+
+def exclude_widget_from_capture(widget):
+    """Prevent our own labels from being fed back into screen recognition."""
+    try:
+        import ctypes
+        import sys
+        if sys.platform != "win32" or sys.getwindowsversion().build < 19041:
+            return False
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        user32.SetWindowDisplayAffinity.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+        user32.SetWindowDisplayAffinity.restype = ctypes.c_bool
+        return bool(user32.SetWindowDisplayAffinity(int(widget.winId()), 0x11))
+    except Exception as exc:
+        warning(f"Cannot exclude overlay from screen capture: {exc}")
+        return False
 
 
 def set_widget_always_on_top(widget: QWidget):

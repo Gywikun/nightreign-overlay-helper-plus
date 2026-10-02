@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 import cv2
 import numpy as np
 from dataclasses import dataclass
@@ -12,13 +14,16 @@ from src.common import get_data_path
 from src.detector.utils import resize_by_height_keep_aspect_ratio, grab_region
 
 
-def get_image_mask(image: Image.Image) -> np.ndarray:
+def get_image_mask(image: Image.Image, strict: bool = False) -> np.ndarray:
     config = Config.get()
     image_np = np.array(image)
     image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     lower_white = np.array(config.mask_lower_white)
     upper_white = np.array(config.mask_upper_white)
+    if strict:
+        lower_white[2] = max(245, lower_white[2])
+        upper_white[1] = min(25, upper_white[1])
     mask = cv2.inRange(hsv, lower_white, upper_white)
     # cv2.imwrite(f"sandbox/debug_hsv_mask.png", mask)
     return mask
@@ -112,7 +117,8 @@ class DayDetector:
                 img = sc.crop(region)
                 img = resize_by_height_keep_aspect_ratio(img, config.template_standard_height)
                 img_mask = get_image_mask(img)
-                return match_mask(img_mask, template_mask)
+                strict_mask = get_image_mask(img, strict=True)
+                return min(match_mask(img_mask, template_mask), match_mask(strict_mask, template_mask))
             score_day1 = match_region(day1_region, template.day1_mask)
             score_day2 = match_region(day2_region, template.day2_mask)
             score_day3 = match_region(day3_region, template.day3_mask)

@@ -1,3 +1,5 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 import cv2
 import os
 import numpy as np
@@ -10,6 +12,7 @@ import random
 import gc
 
 from src.config import Config
+from src.automation import plausible_matches, consensus_pattern
 from src.logger import info, warning, error, debug
 from src.common import get_appdata_path, get_data_path
 from src.detector.map_info import (
@@ -46,7 +49,8 @@ def open_cv2_image(path: str, size: tuple[int, int] | None = None) -> np.ndarray
     path = get_data_path(path)
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
-    image = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
+    # OpenCV's Windows file reader does not reliably support Unicode paths.
+    image = np.array(Image.open(path).convert("RGB"))
     if size is not None:
         image = cv2.resize(image, size, interpolation=CV2_RESIZE_METHOD)
     return image
@@ -239,6 +243,7 @@ class MapDetectParam:
     do_match_pattern: bool = False
     return_pattern_topk: int | None = None
     hdr_processing_enabled: bool = False
+    consensus_when_ambiguous: bool = True
 
 @dataclass
 class MapDetectResult:
@@ -248,6 +253,9 @@ class MapDetectResult:
     earth_shifting_score: float | None = None
     patterns: list[dict] = None
     overlay_images: list[Image.Image] = None
+    match_results: list[MapPatternMatchResult] = None
+    plausible_count: int = 0
+    low_quality: bool = False
 
 
 class MapDetector:  
@@ -717,28 +725,24 @@ class MapDetector:
         img = Image.new("RGBA", draw_size, (0, 0, 0, 0))
         texts, icons = [], []
 
-        # day1 boss
-        x, y = scale_size(pattern.day1_pos)
-        name = get_name(pattern.day1_boss) or "未知BOSS"
-        extra_name = get_name(pattern.day1_extra_boss) if pattern.day1_extra_boss != -1 else None
-        icons.append(((x, y), NIGHT_CIRCLE_ICON))
-        texts.append(((x, y + scale_size(40)), f"Day1 {name}", FONT_SIZE_LARGE, (210, 210, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
-        if extra_name: texts.append(((x, y + scale_size(60)), f"额外Boss:{extra_name}", 
-                                    FONT_SIZE_LARGE, (255, 255, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
-
-        # day2 boss
-        x, y = scale_size(pattern.day2_pos)
-        name = get_name(pattern.day2_boss) or "未知BOSS"
-        extra_name = get_name(pattern.day2_extra_boss) if pattern.day2_extra_boss != -1 else None
-        icons.append(((x, y), NIGHT_CIRCLE_ICON))
-        texts.append(((x, y + scale_size(40)), f"Day2 {name}", FONT_SIZE_LARGE, (210, 210, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
-        if extra_name: texts.append(((x, y + scale_size(60)), f"额外Boss:{extra_name}", 
-                                    FONT_SIZE_LARGE, (255, 255, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
+        # A consensus layout omits boss predictions that differ between candidates.
+        for day in (1, 2):
+            position = getattr(pattern, f"day{day}_pos")
+            if position is None:
+                continue
+            x, y = scale_size(position)
+            name = get_name(getattr(pattern, f"day{day}_boss")) or "未知BOSS"
+            extra = getattr(pattern, f"day{day}_extra_boss")
+            extra_name = get_name(extra) if extra != -1 else None
+            icons.append(((x, y), NIGHT_CIRCLE_ICON))
+            texts.append(((x, y + scale_size(40)), f"Day{day} {name}", FONT_SIZE_LARGE, (210, 210, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
+            if extra_name:
+                texts.append(((x, y + scale_size(60)), f"额外Boss:{extra_name}", FONT_SIZE_LARGE, (255, 255, 255, 255), OUTLINE_W_LARGE, OUTLINE_COLOR))
             
         # 大空洞第二天缩圈位置
         day2_lefttop = pattern.day2_pos_idx == 12000
-        IN_CIRCLE_COLOR = (200, 255, 200, 255)
-        OUT_CIRCLE_COLOR = (255, 200, 200, 255)
+        IN_CIRCLE_COLOR = (200, 255, 200, 255) if pattern.day2_pos is not None else (230, 230, 230, 255)
+        OUT_CIRCLE_COLOR = (255, 200, 200, 255) if pattern.day2_pos is not None else (230, 230, 230, 255)
             
         for pos, construct in pattern.pos_constructions.items():
             pos = scale_size(pos)
@@ -813,7 +817,8 @@ class MapDetector:
             if 200 <= ctype // 100 <= 215:
                 icons.append(((x, y), EVENT_ICON))
                 y += scale_size(15)
-                texts.append(((x, y), get_event_text(pattern), FONT_SIZE_SMALL, (255, 200, 200, 255), OUTLINE_W_SMALL, OUTLINE_COLOR))
+                if event_text := get_event_text(pattern):
+                    texts.append(((x, y), event_text, FONT_SIZE_SMALL, (255, 200, 200, 255), OUTLINE_W_SMALL, OUTLINE_COLOR))
             # 血瓶
             if match(510, 41):
                 y += scale_size(15)
@@ -847,17 +852,18 @@ class MapDetector:
 
         # 说明文本
         info_text_y_offset = 0
-        text = f"#{pattern.id}"
-        if match_result.error is not None:
+        text = "候选共同信息" if result_index == -1 else f"#{pattern.id}"
+        if match_result.error is not None and result_index >= 0:
             text += f" (#{result_index+1} E:{match_result.error})"
-        text += f"  {get_name(pattern.earth_shifting + 200000)} - {get_name(pattern.nightlord + 100000)}"
+        nightlord_text = "夜王未确定" if pattern.nightlord == -1 else get_name(pattern.nightlord + 100000)
+        text += f"  {get_name(pattern.earth_shifting + 200000)} - {nightlord_text}"
         if match_result.nightlord is None:
             text += " (隐藏夜王)"
         texts.append((scale_size((20, 10)), text, scale_size(22), (255, 255, 255, 255), scale_size(3), OUTLINE_COLOR, 'lt'))
         info_text_y_offset += 28
 
         # 大空洞第二天缩圈位置
-        if pattern.earth_shifting == 4:
+        if pattern.earth_shifting == 4 and pattern.day2_pos is not None:
             text = "左上" if day2_lefttop else "右下"
             text = f"Day2第一次缩圈位置：{text}"
             texts.append((scale_size((20, 10 + info_text_y_offset)), text, scale_size(22), (255, 255, 255, 255), scale_size(3), OUTLINE_COLOR, 'lt'))
@@ -909,6 +915,14 @@ class MapDetector:
         # 地图模式匹配
         if param.do_match_pattern:
             results = self._match_map_pattern(img, param.earth_shifting, topk=param.return_pattern_topk)
+            ret.match_results = results
+            candidates = plausible_matches(results)
+            ret.plausible_count = len(candidates)
+            if not results or results[0].error / max(1, results[0].score + results[0].error) > .35:
+                ret.low_quality = True
+                ret.overlay_images = []
+                ret.patterns = []
+                return ret
 
             # 决定信息绘制大小
             if config.fixed_map_overlay_draw_size is not None:
@@ -923,6 +937,11 @@ class MapDetector:
 
             ret.patterns = []
             ret.overlay_images = []
+            if len(candidates) > 1 and param.consensus_when_ambiguous:
+                common_pattern = consensus_pattern([item.pattern for item in candidates])
+                common_result = MapPatternMatchResult(common_pattern, results[0].nightlord, results[0].score, results[0].error)
+                ret.overlay_images.append(self._draw_overlay_image(common_result, draw_size, -1))
+                ret.patterns.append(common_pattern)
             for i, result in enumerate(results):
                 try:
                     info(f"MapDetector: Start to draw overlay image for pattern {result.pattern.id}")
@@ -934,5 +953,3 @@ class MapDetector:
                     error(f"MapDetector: Draw overlay image of pattern {result.pattern.id} failed: {e}")
 
         return ret
-
-

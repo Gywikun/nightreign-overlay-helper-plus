@@ -1,10 +1,12 @@
+# Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
+# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
 import yaml
 import os
 from dataclasses import dataclass
 
-from .common import load_yaml
+from .common import load_yaml, resource_path
 
-CONFIG_PATH = "config.yaml"
+CONFIG_PATH = resource_path("config.yaml")
 
 _config: dict = {}
 _config_mtime = None
