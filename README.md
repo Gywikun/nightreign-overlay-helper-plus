@@ -1,6 +1,6 @@
-# Nightreign Overlay Helper Plus
+# 黑夜君临地图信息助手（Nightreign Overlay Helper Plus）
 
-黑夜君临悬浮助手：非官方自动增强版。
+黑夜君临地图信息助手：非官方自动增强版。
 
 **本项目基于 [NeuraXmy/nightreign-overlay-helper](https://github.com/NeuraXmy/nightreign-overlay-helper) 的 [v0.10.5](https://github.com/NeuraXmy/nightreign-overlay-helper/tree/v0.10.5) 修改。**
 
