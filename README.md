@@ -2,6 +2,27 @@
 
 黑夜君临地图信息助手：非官方自动增强版。
 
+**第一次使用：[下载完整 Windows ZIP](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/download/v0.10.6-auto.3/nightreign-helper-auto-0.10.6-r3-win64.zip)** · [图文使用指南](docs/使用指南.md) · [常见问题](docs/常见问题.md) · [界面与状态截图](docs/界面截图.md)
+
+当前为 **r3 预发布版**。新用户下载上面的 `win64.zip`，完整解压后运行 `NightreignHelper-Auto-r3.exe`，保留同目录的 `_internal`。Release 中的独立 EXE 需要同版本运行库，不能单独运行；`source.zip` 是开发源码。
+
+## 快速开始
+
+1. 在开局前启动助手，游戏使用窗口化或无边框窗口化。
+2. 首次打开会显示设置窗口和自动增强窗口。保留默认自动设置，关闭这两个窗口，切回游戏。
+3. DAY 提示出现时尝试自动开始计时；**通常不用手动截图或点击扫描**。
+4. 打开完整地图，缩放到最小并保持游戏在前台。首次扫描等到“扫描完成”或“候选接近，显示共同信息”后再关图，不以固定等待几秒判断完成。
+5. 同一局再次开图先显示缓存；后台刷新保留原标注。异常时从托盘“自动运行与检测自检”检查，再按[故障恢复步骤](docs/常见问题.md)处理。
+
+**自动运行界面（实际程序界面，未连接游戏）：**
+
+![自动运行设置：默认启用自动定位和地图刷新，重新开图强制刷新默认关闭](docs/images/01-automatic.png)
+
+**缓存状态演示（受控示例，非实战截图；计时与更新时间为示例值）：**
+
+![悬浮计时器显示沿用缓存及上次更新时间的状态演示](docs/images/10-hud-cached.png)
+
+
 **本项目基于 [NeuraXmy/nightreign-overlay-helper](https://github.com/NeuraXmy/nightreign-overlay-helper) 的 [v0.10.5](https://github.com/NeuraXmy/nightreign-overlay-helper/tree/v0.10.5) 修改。**
 
 - 原项目作者：NeuraXmy（贴吧署名 NeuraXmy / bilibili 署名 ルナ茶）。
@@ -27,16 +48,15 @@
 
 原版的缩圈、雨中冒险、血条比例标记、五种角色绝招倒计时及地图数据继续沿用。具体变更见 [CHANGELOG-增强版.md](CHANGELOG-增强版.md)。
 
-## 使用
+## 使用与反馈
 
-从 [Releases](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases) 获取 Windows 程序包，完整解压后运行 `NightreignHelper-Auto-r3.exe`，保留同目录的 `_internal` 文件夹。
+- [图文使用指南](docs/使用指南.md)：首次启动、自动扫描、缓存更新、备用校准、提示音与计时纠正。
+- [常见问题](docs/常见问题.md)：未识别、反复扫描、旧缓存、错过 DAY、局部地图与运行库问题。
+- [界面与状态截图](docs/界面截图.md)：4 个自动增强页面、原版设置、地图标注与 8 种状态示例。
+- [问题反馈](https://github.com/Gywikun/nightreign-overlay-helper-plus/issues/new/choose)：填写版本、画面设置、复现步骤和状态截图。
+- [使用流程检查与后续改进](docs/体验检查与后续改进.md)：已经补齐的材料、当前界面问题与尚未验证的实战内容。
 
-1. 进入游戏前启动助手，游戏使用窗口化或无边框窗口化。
-2. 开局 DAY 提示可见时自动开始计时；打开完整地图并缩放到最小后自动识别。
-3. 同一局再次开图直接使用缓存。画面明显变化、持续开图达到刷新周期或人工请求时才更新。
-4. 自动定位失败时可使用备用校准，结果会保存。
-
-完整设置与已知边界见 [README-增强版.md](README-增强版.md)。
+原有增强说明见 [README-增强版.md](README-增强版.md)。应用内部分帮助仍沿用原版手动流程，增强版自动行为请以本指南为准。
 
 ## 从源码运行
 
@@ -84,3 +104,4 @@ Windows 构建：
 - [雀煊](https://space.bilibili.com/391379672)：大空洞水晶布局分享。
 
 上游 README 与附带说明的原文分别保存在 [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md) 和 [docs/UPSTREAM_MANUAL.txt](docs/UPSTREAM_MANUAL.txt)，其中的原始声明按原文保留。
+

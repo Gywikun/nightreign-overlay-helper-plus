@@ -1,4 +1,6 @@
-# 黑夜君临悬浮助手：自动增强版
+# 黑夜君临地图信息助手：自动增强版
+
+首次使用请先看[图文使用指南](docs/使用指南.md)、[常见问题](docs/常见问题.md)和[界面截图](docs/界面截图.md)。下文保留增强版详细行为说明。
 
 基于 NeuraXmy 的 nightreign-overlay-helper v0.10.5（a7d4d6838a17f08f532e84273036dbab4f3cbd7c），原项目：
 https://github.com/NeuraXmy/nightreign-overlay-helper
@@ -23,7 +25,7 @@ https://github.com/NeuraXmy/nightreign-overlay-helper
 - 检测区域按 HUD 的左侧、右侧和中心位置跟随窗口移动及尺寸变化。
 - 自动取样正常或雨中的血条颜色；手动指定的颜色优先保留。
 - 缩圈前 30/10 秒、雨中设定时限前 10 秒、绝招效果结束前 3 秒提示；声音与时间可以修改。
-- 切出游戏后继续计时，停止游戏提醒和画面检测。
+- 切出游戏后继续计时，停止触发新的游戏提醒和画面检测。
 
 ## 地图缓存与扫描提示（r3）
 

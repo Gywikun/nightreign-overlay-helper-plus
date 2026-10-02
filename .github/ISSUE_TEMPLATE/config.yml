@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 图文使用指南与常见问题
+    url: https://github.com/Gywikun/nightreign-overlay-helper-plus/blob/auto-enhancements/docs/使用指南.md
+    about: 查看下载、首次启动、地图状态和备用校准步骤。

@@ -1,63 +1,51 @@
-# 发布到 GitHub
+# 发布维护说明
 
-## 推荐：Fork 上游并保留 Git 历史
+## 当前已经发布的项目
 
-1. 登录 GitHub，打开 https://github.com/NeuraXmy/nightreign-overlay-helper ，点击 Fork。
-2. 选择自己的账号，仓库名可改为 `nightreign-overlay-helper-plus`。
-3. 将 Fork 克隆到一个新的本地目录，不要覆盖正在使用的助手目录。
-4. 从原版 v0.10.5 基线创建 `auto-enhancements` 分支，复制本准备目录的内容，保留克隆目录中的 `.git`。
+- 仓库：[Gywikun/nightreign-overlay-helper-plus](https://github.com/Gywikun/nightreign-overlay-helper-plus)。展示名称：黑夜君临地图信息助手。
+- 此仓库是 [NeuraXmy/nightreign-overlay-helper](https://github.com/NeuraXmy/nightreign-overlay-helper) 的公开 Fork；默认分支为 `auto-enhancements`。
+- 增强代码基于上游 v0.10.5，基线提交 `a7d4d6838a17f08f532e84273036dbab4f3cbd7c`。
+- 当前程序发布为 [v0.10.6-auto.3 预发布版](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/tag/v0.10.6-auto.3)，包含完整 Windows ZIP、对应源码 ZIP、独立 EXE 和 SHA256 文件。
+- 此次截图和指南补充只更新默认分支文档与反馈入口，未更改现有程序或源码附件。
 
-以下命令已使用你的账号 `Gywikun`；目录路径可按需调整：
+## 已有仓库的后续修改
+
+下面是维护者在新目录取得当前增强分支的示例；不要再次从基线创建同名分支，也不要覆盖正在使用的助手目录。
 
 ```powershell
 git clone "https://github.com/Gywikun/nightreign-overlay-helper-plus.git" "D:\Projects\nightreign-overlay-helper-public"
 Set-Location "D:\Projects\nightreign-overlay-helper-public"
-git remote add upstream "https://github.com/NeuraXmy/nightreign-overlay-helper.git"
-git fetch upstream tag v0.10.5
-git switch -c auto-enhancements a7d4d6838a17f08f532e84273036dbab4f3cbd7c
+git switch auto-enhancements
 ```
 
-将准备目录内的文件和文件夹复制到这个克隆目录。隐藏文件 `.gitignore` 也需要复制；保留目标目录原有的 `.git`。
-这是对选定基线应用增强源码，不需要强制推送或重写上游历史。
+修改前查看 `git status`，正常提交并推送到当前分支。纯截图/文档补充不需要重新发布 EXE。程序变化应重新验证、构建并使用新的版本号和标签，保留现有版本供使用者下载。
 
-```powershell
-git status --short
-git add README.md NOTICE.md .gitignore PUBLISHING.md LICENSE launch.py config.yaml pyproject.toml requirements-lock.txt build.bat manual.txt
-git add src tests scripts assets data docs
-git add "README-增强版.md" "CHANGELOG-增强版.md"
-git diff --cached --stat
-git commit -m "Add automatic map caching, recognition feedback and soft short alerts"
-git push -u origin auto-enhancements
-```
+源码运行/依赖安装见[首页](README.md)，Windows 构建脚本为 [scripts/build_windows.ps1](scripts/build_windows.ps1)。发布时保留源代码、资源来源、`LICENSE`、`NOTICE.md` 和对应构建说明。
 
-在 GitHub 的仓库设置中，将默认分支设为 `auto-enhancements`，这样首页直接显示增强版说明。
+## 工作流与 Release
 
-如果不使用 Fork，也可以创建新的 Public 仓库并上传这些源文件；README 与 NOTICE 中的上游归属说明仍应保留。
+本增强分支删除了上游 `.github/workflows/build.yml` 与 `release.yml`。原 `build.yml` 在推送 `v*` 标签时会执行上游 onefile 构建和自动发布步骤，可能与这里的 onedir 程序包及手工发布说明发生冲突。
 
-## 仓库说明建议
+当前分支没有沿用这两个自动发布工作流。新增工作流前，先明确标签范围、构建方式和产物命名，避免同一个标签触发两套发布。上游 `.python-version` 与 `scripts/ci_version.py` 保留。
 
-> 基于 NeuraXmy/nightreign-overlay-helper v0.10.5 的非官方自动增强版：自动定位、地图缓存与后台刷新、识别状态提示、柔和短提示音。代码沿用 AGPLv3。
+## 后续发布检查
 
-## 发布程序包
+1. 先验证程序变化，记录实战与受控测试的实际范围。
+2. 生成完整 onedir 程序目录，并保留同目录 `_internal`；用[构建脚本](scripts/build_windows.ps1)和[打包脚本](scripts/package_release.py)准备程序 ZIP、对应源码和校验文件。
+3. 新版本更新名称、版本号、变更说明和已知边界，再对增强代码提交创建新标签。
+4. Release 优先给普通用户完整 Windows ZIP 下载入口，明确独立 EXE 的运行库依赖；对应源码指向本次发布的固定标签/源码包。
+5. 核对附件上传状态、大小和 SHA256；未验证实战兼容性时继续清楚标明预发布与验证边界。
+6. 确认 README、[图文指南](docs/使用指南.md)、[状态截图](docs/界面截图.md)和[问题反馈](https://github.com/Gywikun/nightreign-overlay-helper-plus/issues/new/choose)对应实际版本。
 
-代码仓库提交源文件，不提交 `.venv`、`.work`、`dist`、`release`、本地日志或用户配置。
+代码库不提交 `.venv`、`.work`、本地日志、用户设置、`dist` 或程序 ZIP。体积较大的程序包放 Releases 附件。
 
-在 Releases 里选择 Draft a new release：
+## 来源与许可
 
-- Tag：`v0.10.6-auto.3`。
-- Target：增强代码所在的 `auto-enhancements` 分支。
-- Title：`v0.10.6-auto.3 — 自动增强版 r3`。
-- 先作为 Pre-release 发布，明确实际游戏/HDR验证边界。
-- 上传 Windows 完整程序包、对应源码包与 SHA256 校验文件。
-
-程序包约 137 MiB，应放在 Releases 附件中。GitHub 普通 Git 仓库会阻止超过 100 MiB 的单个文件；网页上传单文件限制为 25 MiB。因此不要把程序 ZIP 拖到 Code 文件列表里，也不要把源码 ZIP 当作源码仓库。
-
-本目录 README 已标明原项目、原作者、版本、基线提交、修改日期、功能差异和许可证。
-原始 LICENSE 保持不变，原 README/manual 保存在 docs/。发布 exe 时一并提供对应源代码与构建方法。
+原始 `LICENSE` 保持不变；上游 README 和 manual 原文保存在 docs 中。代码沿用 AGPLv3，游戏与其他第三方素材的版权归原权利人，具体见 [NOTICE.md](NOTICE.md)。
 
 ## 官方参考
 
-- Fork：https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo
-- 大文件：https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github
-- Releases：https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
-- 上游许可证：https://github.com/NeuraXmy/nightreign-overlay-helper/blob/main/LICENSE
+- [Fork 仓库](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo)
+- [仓库大文件限制](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github)
+- [管理 Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
+- [Issue 表单语法](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms)

@@ -1,0 +1,51 @@
+name: 问题反馈
+description: 报告启动、地图识别、缓存、计时或提示问题。
+title: "[问题] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        先参考[图文指南](https://github.com/Gywikun/nightreign-overlay-helper-plus/blob/auto-enhancements/docs/使用指南.md)与[常见问题](https://github.com/Gywikun/nightreign-overlay-helper-plus/blob/auto-enhancements/docs/常见问题.md)。
+        不确定某项信息时可写“不清楚”。截图请包含状态文字；不要仅写“识别失败”。
+  - type: input
+    id: version
+    attributes:
+      label: 助手版本与下载方式
+      placeholder: 例如 0.10.6+auto.3；完整 win64 ZIP / 独立 EXE / 源码
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 游戏与画面设置
+      value: |
+        Windows 版本：
+        游戏版本、语言：
+        分辨率、Windows 显示缩放：
+        窗口模式（窗口化/无边框/全屏）：
+        HDR、多显示器：
+        是否已使用备用框选：
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 如何复现
+      placeholder: 从启动助手开始，写出发生前后的操作和当前状态文字。
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 期望结果与实际结果
+      value: |
+        期望结果：
+        实际结果：
+        悬浮提示文字及上次更新时间：
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 截图或日志（可选）
+      description: 可附悬浮状态、自检对应区域、相关日志片段；日志入口在主设置“打开日志位置”。

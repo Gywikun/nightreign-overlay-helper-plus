@@ -1,0 +1,23 @@
+name: 功能建议
+description: 描述想减少的操作或需要改善的使用流程。
+title: "[建议] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 现在遇到什么使用问题
+      placeholder: 描述具体场景，以及现在需要手动做哪些操作。
+    validations:
+      required: true
+  - type: textarea
+    id: desired
+    attributes:
+      label: 希望助手怎样处理
+      placeholder: 描述操作后应该看到的行为或提示。
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充材料（可选）
+      description: 可以提供参考界面、截图或现有操作步骤。
