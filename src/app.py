@@ -1,5 +1,5 @@
 # Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
-# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
+# Added/modified 2026-10-02 and 2026-10-03; see NOTICE.md and LICENSE (GNU AGPL v3).
 import sys
 import time
 import os
@@ -190,6 +190,9 @@ if __name__ == "__main__":
                     screens.append(name)
                 settings_window.grab().save(str(output / "settings.png"))
                 (output / "result.json").write_text(json.dumps({"version": APP_VERSION, "status": "passed", "screens": screens,
+                                                              "app_name": APP_FULLNAME, "tray_tooltip": tray_icon.toolTip(),
+                                                              "settings_title": settings_window.windowTitle(),
+                                                              "enhancement_title": settings_window.enhancement_dialog.windowTitle(),
                                                               "config_path": get_appdata_path("settings.yaml")}, ensure_ascii=False, indent=2), encoding="utf-8")
             except Exception as exc:
                 error(f"Smoke test failed: {exc}")

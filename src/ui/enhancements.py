@@ -1,6 +1,7 @@
 # Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
-# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
+# Added/modified 2026-10-02 and 2026-10-03; see NOTICE.md and LICENSE (GNU AGPL v3).
 from dataclasses import asdict
+from src.common import APP_FULLNAME
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (QDialog, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
@@ -20,7 +21,7 @@ class EnhancementDialog(QDialog):
         self.last_snapshot = {}
         self.loading = True
         self.controls = {}
-        self.setWindowTitle("自动运行、检测自检与计时纠正")
+        self.setWindowTitle(f"{APP_FULLNAME} · 自动运行、检测自检与计时纠正")
         self.resize(840, 650)
         self.setMinimumSize(660, 430)
         root = QVBoxLayout(self)
@@ -93,9 +94,16 @@ class EnhancementDialog(QDialog):
         self.map_label.setWordWrap(True)
         layout.addWidget(self.map_label)
         refresh = QPushButton("立即请求重新识别（备用）")
-        refresh.clicked.connect(lambda: self.updater.submit_command("refresh_map"))
+        refresh.clicked.connect(self.request_map_refresh)
         layout.addWidget(refresh)
+        self.refresh_request_label = QLabel('')
+        self.refresh_request_label.setWordWrap(True)
+        layout.addWidget(self.refresh_request_label)
         layout.addStretch()
+
+    def request_map_refresh(self):
+        self.refresh_request_label.setText('重新识别请求已提交：请关闭设置并切回完整地图，等待画面稳定和扫描间隔。')
+        self.updater.submit_command('refresh_map')
 
     def build_diagnostics_tab(self):
         layout = self.page("检测自检")
@@ -255,6 +263,7 @@ class EnhancementDialog(QDialog):
         window = snapshot.get("window")
         self.window_label.setText(f"已找到游戏窗口：{window[2]} × {window[3]} · {'游戏在前台' if snapshot.get('foreground') else '切出游戏，等待返回'}" if window else "等待启动 ELDEN RING NIGHTREIGN")
         self.map_label.setText("地图：" + snapshot.get("map", "等待"))
+        self.refresh_request_label.setText(snapshot.get('refresh_request', ''))
         state_keys = {"day1_detect_region": "day", "hpcolor_detect_region": "rain", "map_region": "map", "hpbar_region": "hp", "art_region": "art"}
         for name, label in self.status_labels.items():
             region = snapshot.get("regions", {}).get(name)

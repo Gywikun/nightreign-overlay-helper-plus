@@ -1,9 +1,10 @@
 # Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
-# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
+# Added/modified 2026-10-02 and 2026-10-03; see NOTICE.md and LICENSE (GNU AGPL v3).
 """Worker-thread implementation of the automatic desktop workflow."""
 from dataclasses import asdict, replace
 from queue import SimpleQueue, Empty
 import time
+import math
 import numpy as np
 import cv2
 from mss import mss
@@ -64,6 +65,8 @@ class AutomationRuntime:
                     self.remember_region_anchors()
                 elif action == "refresh_map":
                     self.map_policy.request()
+                    self._diagnostics['refresh_request'] = '重新识别请求已收到'
+                    self.emit_diagnostics()
                 elif action == "new_round":
                     self.day_cue_latch.suppress(self.get_time())
                     self.start_day1()
@@ -107,6 +110,7 @@ class AutomationRuntime:
         self.alert_engine.reset()
         self._pending_clean_map = None
         self._map_feedback = None
+        self._diagnostics.pop('refresh_request', None)
         self._map_open_number = 0
         self._map_notice_keys.clear()
         self._map_cache = None
@@ -242,10 +246,37 @@ class AutomationRuntime:
             setattr(self, name, color)
             self.colors_changed_signal.emit({name: color})
 
+    def refresh_request_status(self):
+        if 'refresh_request' not in self._diagnostics:
+            return ''
+        pending = self.map_policy.pending_reason == '手动刷新'
+        clean_capture = self._pending_clean_map and self._pending_clean_map[0] == '手动刷新'
+        if pending or clean_capture:
+            if not self.map_detect_enabled:
+                return '请求已收到：地图识别已关闭，请在主设置中开启“启用地图识别”。'
+            if not self.game_window:
+                return '请求已收到：等待游戏窗口，请启动 ELDEN RING NIGHTREIGN。'
+            if not self._is_game_foreground:
+                return '请求已收到：请关闭设置并切回游戏，展示完整地图。'
+            if self.map_region is None:
+                return '请求已收到：等待完整地图区域定位，必要时使用“检测自检”备用框选。'
+            if not self.current_is_full_map:
+                return '请求已收到：请打开完整地图并缩放到最小。'
+            if clean_capture:
+                return '请求已收到：正在准备不含旧标注的截图。'
+            remaining = self.automation_options.map_min_interval - (self.get_time() - self.map_policy.last_attempt)
+            if remaining > 0:
+                return f'请求已收到：等待扫描间隔，还需约 {math.ceil(remaining)} 秒。'
+            if self.map_policy.stable_since is None or self.get_time() - self.map_policy.stable_since < self.automation_options.map_stable_seconds:
+                return '请求已收到：等待画面稳定，请保持完整地图打开。'
+            return '请求已收到：条件已满足，等待开始识别。'
+        return self._map_feedback[1] if self._map_feedback else self._diagnostics['refresh_request']
+
     def emit_diagnostics(self):
         snapshot = dict(self._diagnostics)
         snapshot["window"] = self.game_window
         snapshot["foreground"] = self._is_game_foreground
+        snapshot['refresh_request'] = self.refresh_request_status()
         snapshot["regions"] = {name: getattr(self, name) for name in REGION_NAMES}
         snapshot["timer"] = (self.day, self.current_phase.value if self.current_phase is not None else None,
                              max(0, self.get_time() - self.phase_start_time) if self.phase_start_time is not None else 0)

@@ -2,9 +2,9 @@
 
 黑夜君临地图信息助手：非官方自动增强版。
 
-**第一次使用：[下载完整 Windows ZIP](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/download/v0.10.6-auto.3/nightreign-helper-auto-0.10.6-r3-win64.zip)** · [图文使用指南](docs/使用指南.md) · [常见问题](docs/常见问题.md) · [界面与状态截图](docs/界面截图.md)
+**第一次使用：[下载完整 Windows ZIP](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/download/v0.10.6-auto.4/nightreign-helper-auto-0.10.6-r4-win64.zip)** · [图文使用指南](docs/使用指南.md) · [常见问题](docs/常见问题.md) · [界面与状态截图](docs/界面截图.md)
 
-当前为 **r3 预发布版**。新用户下载上面的 `win64.zip`，完整解压后运行 `NightreignHelper-Auto-r3.exe`，保留同目录的 `_internal`。Release 中的独立 EXE 需要同版本运行库，不能单独运行；`source.zip` 是开发源码。
+当前为 **r4 预发布版**。新用户下载上面的 `win64.zip`，完整解压后运行 `NightreignHelper-Auto-r4.exe`，保留同目录的 `_internal`。Release 中的独立 EXE 需要同版本运行库，不能单独运行；`source.zip` 是开发源码。
 
 ## 快速开始
 
@@ -27,8 +27,8 @@
 
 - 原项目作者：NeuraXmy（贴吧署名 NeuraXmy / bilibili 署名 ルナ茶）。
 - 基线提交：[`a7d4d6838a17f08f532e84273036dbab4f3cbd7c`](https://github.com/NeuraXmy/nightreign-overlay-helper/commit/a7d4d6838a17f08f532e84273036dbab4f3cbd7c)。
-- 修改日期：2026-10-02。
-- 当前增强版本：`0.10.6+auto.3`（r3）。
+- 修改日期：2026-10-02～2026-10-03。
+- 当前增强版本：`0.10.6+auto.4`（r4）。
 - 代码沿用上游 **GNU AGPLv3**，完整许可证见 [LICENSE](LICENSE)，来源与修改说明见 [NOTICE.md](NOTICE.md)。
 
 这是独立维护的增强版本。原有功能与资源来源均保留署名，不将原作者的工作标为本项目原创。
@@ -44,6 +44,7 @@
 | 结果检查 | 首次扫描在展示前检查游戏前台状态、完整地图与明显画面变化 |
 | 提示音 | 约 0.2 秒的柔和短音，降低默认音量并减少重复提示 |
 | 校准与纠错 | 显示检测区域预览，提供备用框选和直接计时纠正入口 |
+| 使用帮助 | r4 内置帮助说明自动定位、缓存和备用校准，刷新请求显示当前等待原因 |
 | 配置隔离 | 使用独立增强版配置目录，保留原版用户配置 |
 
 原版的缩圈、雨中冒险、血条比例标记、五种角色绝招倒计时及地图数据继续沿用。具体变更见 [CHANGELOG-增强版.md](CHANGELOG-增强版.md)。
@@ -52,11 +53,11 @@
 
 - [图文使用指南](docs/使用指南.md)：首次启动、自动扫描、缓存更新、备用校准、提示音与计时纠正。
 - [常见问题](docs/常见问题.md)：未识别、反复扫描、旧缓存、错过 DAY、局部地图与运行库问题。
-- [界面与状态截图](docs/界面截图.md)：4 个自动增强页面、原版设置、地图标注与 8 种状态示例。
+- [界面与状态截图](docs/界面截图.md)：自动增强页面、主设置、地图状态示例，以及 r4 刷新反馈和新帮助窗口。
 - [问题反馈](https://github.com/Gywikun/nightreign-overlay-helper-plus/issues/new/choose)：填写版本、画面设置、复现步骤和状态截图。
 - [使用流程检查与后续改进](docs/体验检查与后续改进.md)：已经补齐的材料、当前界面问题与尚未验证的实战内容。
 
-原有增强说明见 [README-增强版.md](README-增强版.md)。应用内部分帮助仍沿用原版手动流程，增强版自动行为请以本指南为准。
+原有增强说明见 [README-增强版.md](README-增强版.md)。r4 已更新程序内的自动计时/地图帮助，并提供完整图文指南链接。刷新按钮下方显示请求与等待原因。
 
 ## 从源码运行
 
@@ -80,11 +81,11 @@ Windows 构建：
 .\scripts\build_windows.ps1
 ```
 
-输出为 `dist/NightreignHelper-Auto-r3/`，使用 PyInstaller `--onedir --windowed`。程序包和对应源码包在 Releases 一起提供。
+输出为 `dist/NightreignHelper-Auto-r4/`，使用 PyInstaller `--onedir --windowed`。程序包和对应源码包在 Releases 一起提供。
 
 ## 验证范围与已知边界
 
-- r3 的 66 项自动测试及本机原生程序启动、设置保存、退出检查已通过。
+- r4 的 67 项自动测试及本机原生程序启动、设置保存、退出检查已通过。
 - 地图缓存与标注保留经过受控真实窗口控件测试；这些测试不是实际游戏对局验收。
 - 实际游戏、HDR、特殊界面比例和物理设备听感仍需使用者反馈。
 - 地图数据来自 v0.10.5，不会在线更新游戏资料。缓存仅保存在内存，退出后需重新识别。

@@ -1,5 +1,5 @@
 # Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
-# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
+# Added/modified 2026-10-02 and 2026-10-03; see NOTICE.md and LICENSE (GNU AGPL v3).
 from pathlib import Path
 import os
 import sys
@@ -10,7 +10,7 @@ import tomllib
 
 
 APP_NAME = "nightreign-overlay-helper-plus"
-APP_NAME_CHS = "黑夜君临悬浮助手 · 自动增强版"
+APP_NAME_CHS = "黑夜君临地图信息助手 · 自动增强版"
 
 def get_version() -> str:
     """从 pyproject.toml 读取版本号，自动适配源码和 PyInstaller 打包环境"""
@@ -30,7 +30,7 @@ def get_version() -> str:
         return "unknown"
 
 APP_VERSION = get_version()
-APP_FULLNAME = f"{APP_NAME_CHS}v{APP_VERSION}"
+APP_FULLNAME = f"{APP_NAME_CHS} v{APP_VERSION}"
 APP_AUTHOR = "NeuraXmy"
 
 GAME_WINDOW_TITLE = "ELDEN RING NIGHTREIGN"

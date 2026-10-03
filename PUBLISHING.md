@@ -5,8 +5,8 @@
 - 仓库：[Gywikun/nightreign-overlay-helper-plus](https://github.com/Gywikun/nightreign-overlay-helper-plus)。展示名称：黑夜君临地图信息助手。
 - 此仓库是 [NeuraXmy/nightreign-overlay-helper](https://github.com/NeuraXmy/nightreign-overlay-helper) 的公开 Fork；默认分支为 `auto-enhancements`。
 - 增强代码基于上游 v0.10.5，基线提交 `a7d4d6838a17f08f532e84273036dbab4f3cbd7c`。
-- 当前程序发布为 [v0.10.6-auto.3 预发布版](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/tag/v0.10.6-auto.3)，包含完整 Windows ZIP、对应源码 ZIP、独立 EXE 和 SHA256 文件。
-- 此次截图和指南补充只更新默认分支文档与反馈入口，未更改现有程序或源码附件。
+- 当前程序发布为 [v0.10.6-auto.4 预发布版](https://github.com/Gywikun/nightreign-overlay-helper-plus/releases/tag/v0.10.6-auto.4)，包含完整 Windows ZIP、对应源码 ZIP、独立 EXE 和 SHA256 文件。
+- 2026-10-02 的截图/指南补充仅更新文档；2026-10-03 的 r4 单独发布帮助、刷新反馈和名称修复，旧 r3 附件保留。
 
 ## 已有仓库的后续修改
 

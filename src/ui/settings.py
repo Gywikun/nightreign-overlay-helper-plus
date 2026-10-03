@@ -1,10 +1,11 @@
 # Based on NeuraXmy/nightreign-overlay-helper v0.10.5.
-# Added/modified 2026-10-02; see NOTICE.md and LICENSE (GNU AGPL v3).
+# Added/modified 2026-10-02 and 2026-10-03; see NOTICE.md and LICENSE (GNU AGPL v3).
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint, QEvent
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QSlider, QGroupBox, QCheckBox, QPushButton,
-    QMessageBox, QApplication, QFrame, QComboBox, QToolTip, 
+    QMessageBox, QApplication, QFrame, QComboBox, QToolTip,
+    QDialog, QTextBrowser,
     QLineEdit, QScrollArea,
 )
 from PyQt6.QtGui import QPixmap, QIcon, QMouseEvent, QEnterEvent
@@ -19,7 +20,7 @@ from src.updater import Updater
 from src.common import (
     APP_FULLNAME, APP_NAME, APP_VERSION,
     get_appdata_path, get_asset_path, get_desktop_path,
-    ICON_PATH, load_yaml, save_yaml,
+    ICON_PATH, load_yaml, save_yaml, resource_path,
 )
 from src.logger import info, warning, error, set_log_level, INFO, DEBUG
 from src.config import Config
@@ -39,9 +40,7 @@ BUTTON_STYLE = "padding: 4px; min-height: 20px;"
 SETTINGS_SAVE_PATH = get_appdata_path("settings.yaml")
 PRESET_SETTINGS_DIR = get_appdata_path("preset_settings")
 
-DETECT_REGION_TUTORIAL_IMG_PATH = get_asset_path("detect_region_tutorial/{i}.jpg")
 COLOR_ALIGN_TUTORIAL_IMG_PATH = get_asset_path("color_align_tutorial/{i}.jpg")
-MAP_DETECT_TUTORIAL_IMG_PATH = get_asset_path("map_detect_tutorial/{i}.jpg")
 HP_DETECT_TUTORIAL_IMG_PATH = get_asset_path("hp_detect_tutorial/{i}.jpg")
 ART_DETECT_TUTORIAL_IMG_PATH = get_asset_path("art_detect_tutorial/{i}.jpg")
 
@@ -1069,49 +1068,38 @@ class SettingsWindow(QWidget):
             self.save_settings()
 
     def show_capture_day1_hpcolor_region_tutorial(self):
-        tutorial_imgs = [QPixmap(str(DETECT_REGION_TUTORIAL_IMG_PATH).format(i=i)) for i in range(1, 8)]
-        img_widgets: list[QLabel] = []
-        for img in tutorial_imgs:
-            img_widget = QLabel()
-            img = img.scaledToHeight(min(100, img.height()), Qt.TransformationMode.SmoothTransformation)
-            img_widget.setPixmap(img)
-            img_widget.setStyleSheet("border: 1px solid #ccc;")
-            img_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            img_widgets.append(img_widget)
-        msg = QMessageBox(self)
-        msg.setMaximumWidth(400)
-        msg.setWindowTitle("自动计时帮助")
-        layout: QVBoxLayout = QVBoxLayout()
-        layout.addWidget(QLabel("自动计时原理为通过定时截图分析画面内容，因此需要先框选检测区域，请按照以下步骤操作："))
-        layout.addWidget(QLabel("1. 首先在设置界面调整\"截取检测区域快捷键\""))
-        layout.addWidget(img_widgets[0])
-        layout.addWidget(QLabel("2. 开始一局单人游戏，在游戏第一天开始，出现\"DAY I\"图标时，按下设置的快捷键\n"
-                                "画面会定格，并出现几个按钮（如果此时鼠标被锁定在屏幕中间，点一下左键即可）"))
-        hlayout = QHBoxLayout()
-        hlayout.addWidget(img_widgets[1])
-        hlayout.addWidget(img_widgets[2])
-        layout.addLayout(hlayout)
-        layout.addWidget(QLabel("3. 点击\"点我并框出 血条 的区域\"按钮，然后用鼠标框选屏幕上的血条区域\n"
-                                "框选的区域如下图所示，需要把血条的纯色内部框进去，尽量不要框到边框\n"
-                                "⚠️即使你画面里的血条可能更长，但也只需要框【最左边的一小段】！"))
-        layout.addWidget(img_widgets[3])
-        layout.addWidget(QLabel("4. 点击\"点我并框出 DAY I 图标 的区域\"按钮，然后用鼠标框选屏幕上的 DAY I 图标\n"
-                                "框选的区域如下图所示，需要把最左边的D和最右边的I的突出部分也要框进去\n"
-                                "⚠️尽量严丝合缝，上下不要留有空隙"))
-        layout.addWidget(img_widgets[4])
-        layout.addWidget(QLabel("5. 最后点击\"保存\"按钮完成设置，在设置界面查看是否显示\"已设置\""))
-        layout.addWidget(img_widgets[5])
-        layout.addWidget(QLabel("6. 之后正常游玩即可自动计时，若修改游戏分辨率则需要重新框选"))
-        layout.addWidget(QLabel("ℹ️ 缩圈自动计时可能失效的场景：DAY X图标出现时正在浏览背包和地图\n"
-                                "ℹ️ 雨中冒险计时可能失效的场景：当前血量过少 / 开启HDR"))
-        layout.addWidget(QLabel("⚠️ 即使开启了自动检测，仍然推荐设置快捷键作为备用"))
-        layout.addWidget(QLabel("7. 如果缩圈检测失效，可能是因为游戏语言不同，可以调整设置里的\"游戏语言\""))
-        layout.addWidget(img_widgets[6])
-        layout.addWidget(QLabel("8. 如果雨中冒险检测失效，可能是因为色差，可以尝试设置里的\"校准血条颜色\""))
-        msg.layout().addLayout(layout, 0, 0)
-        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg.exec()
-    
+        return self.show_automation_help('自动计时帮助', """
+<h3>默认自动定位与计时</h3>
+<ol>
+<li>在开局前启动助手，游戏使用窗口化或无边框窗口化。</li>
+<li>在“自动运行”保留自动定位和窗口跟随；主设置勾选“缩圈自动计时”，游戏语言与实际一致。</li>
+<li>关闭设置并切回游戏。DAY 提示正常出现后尝试自动开始计时；通常不用手动截图或绑定校准快捷键。</li>
+</ol>
+<h3>自动失败时再备用校准</h3>
+<p>托盘 → “自动运行与检测自检” → “检测自检”。DAY 提示平时不出现，等待是正常情况。</p>
+<p>仍未定位时，在对应模块点击“备用：2 秒后截屏框选”，2 秒内切回游戏展示 DAY/血条。
+按截屏提示框选并保存：血条只框最左侧一小段纯色内部；DAY 提示边界贴合图标。</p>
+<p>开局漏检时，在“计时纠正”选择真实当天、当前阶段和该阶段已过秒数。
+真实新局才使用“开始新局：清理旧地图和计时，开始第一天”。</p>
+<p>雨中血条颜色会尝试自动取样；低血量、HDR、特殊 UI 比例可能仍需校准。
+窗口跟随会尝试适配移动和分辨率变化，预览不正确时再调整区域。</p>
+""")
+
+    def show_automation_help(self, title, content):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f'{APP_FULLNAME} · {title}')
+        dialog.resize(760, 560)
+        layout = QVBoxLayout(dialog)
+        browser = QTextBrowser()
+        browser.setOpenExternalLinks(True)
+        browser.setHtml(content + '<p><a href="https://github.com/Gywikun/nightreign-overlay-helper-plus/blob/auto-enhancements/docs/使用指南.md">打开完整图文使用指南</a></p>')
+        layout.addWidget(browser)
+        close_button = QPushButton('关闭')
+        close_button.clicked.connect(dialog.accept)
+        layout.addWidget(close_button, alignment=Qt.AlignmentFlag.AlignRight)
+        dialog.exec()
+        return dialog
+
     def update_day1_hpcolor_regions(self):
         self.updater.day1_detect_region = self.day1_detect_region
         self.updater.hpcolor_detect_region = self.hpcolor_detect_region
@@ -1263,52 +1251,28 @@ class SettingsWindow(QWidget):
         info(f"Map detect enabled: {enabled}")
 
     def show_capture_map_region_tutorial(self):
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle("注意事项")
-        msg.setText("""
-该功能通过解包数据展示详细的地图剧透信息，建议在休闲游戏时避免使用。
-请确保在不会影响到你以及你的队友的游戏体验的前提下使用该功能。
-对于使用该功能对游戏体验产生的破坏，工具作者不承担任何责任。
-（感谢来自 Fuwish@bilibili 的地图解包数据）
-""".strip())
-        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg.exec()
-
-        tutorial_imgs = [QPixmap(str(MAP_DETECT_TUTORIAL_IMG_PATH).format(i=i)) for i in range(1, 4)]
-        img_widgets: list[QLabel] = []
-        for img in tutorial_imgs:
-            img_widget = QLabel()
-            img = img.scaledToHeight(min(100, img.height()), Qt.TransformationMode.SmoothTransformation)
-            img_widget.setPixmap(img)
-            img_widget.setStyleSheet("border: 1px solid #ccc;")
-            img_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            img_widgets.append(img_widget)
-        msg = QMessageBox(self)
-        msg.setMaximumWidth(400)
-        msg.setWindowTitle("识别地图帮助")
-        layout: QVBoxLayout = QVBoxLayout()
-        layout.addWidget(QLabel("1. 首先在设置界面调整\"截取地图区域快捷键\""))
-        layout.addWidget(img_widgets[0])
-        layout.addWidget(QLabel("2. 在任意有地图的游戏画面下按下设置的快捷键，并框选地图的区域\n"
-                                "⚠️框的区域需要和地图的边框完全贴合"))
-        layout.addWidget(img_widgets[1])
-        layout.addWidget(QLabel("3. 回到设置界面看到\"已设置\"即可"))
-        layout.addWidget(img_widgets[2])
-        layout.addWidget(QLabel("4. 识别地图功能触发机制："))
-        layout.addWidget(QLabel("ℹ️ 地图必须要完整展示（缩放到最小）时才能正常识别"))
-        layout.addWidget(QLabel("ℹ️ 自动识别触发："))
-        layout.addWidget(QLabel("       每次缩圈Day1计时开始后（无论是自动计时还是手动开始），第一次检测到完整地图时，\n"
-                                "       会触发一次自动识别，直到下一次Day1计时开始前不会再次触发"))
-        layout.addWidget(QLabel("ℹ️ 手动识别触发："))
-        layout.addWidget(QLabel("       可以用“识别地图快捷键”手动触发识别"))
-        layout.addWidget(QLabel("5. 识别成功后，地图在缩放到最小的状态时，信息会悬浮显示在地图上（暂时不支持跟随缩放）\n"
-                                "可以用“显示/隐藏信息快捷键”切换显示\n"))
-        layout.addWidget(QLabel("⚠️某些地图的数据可能有错误，发现错误可截图反馈给作者"))
-        msg.layout().addLayout(layout, 0, 0)
-        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg.exec()
-
+        return self.show_automation_help('地图识别帮助', """
+<h3>先自动识别，失败时再校准</h3>
+<ol>
+<li>主设置开启“启用地图识别”，自动页保留自动定位和地图自动刷新。</li>
+<li>关闭设置，切回游戏，打开完整地图并缩放到最小，保持画面稳定。</li>
+<li>蓝色表示扫描中；首次没有缓存时，等“扫描完成”或“候选接近，显示共同信息”后再关图。</li>
+</ol>
+<h3>同一局复用缓存，按需要更新</h3>
+<p>再次开图先显示缓存；“重新开图时强制刷新”默认关闭。
+持续开图默认每 20 秒请求更新，也可能因画面明显变化、第二天开始或人工请求更新。
+关图时间不计入开图刷新周期；后台刷新保留旧标注，通过检查后才替换。</p>
+<p>绿色表示本次完成或沿用缓存，黄色可能是候选接近或本次失败保留旧信息，请同时看状态文字和更新时间。
+新局、确认地形切换会清理旧信息；退出程序后缓存不保留。</p>
+<h3>异常与备用操作</h3>
+<p>“立即请求重新识别（备用）”会显示请求反馈。点击后关闭设置、切回完整地图；请求不等于完成，仍需画面稳定并满足扫描间隔。</p>
+<p>自动定位长期失败：进入“检测自检”的完整地图模块，点“备用：2 秒后截屏框选”，
+2 秒内切回完整地图，框边与地图边框贴合后保存。快捷键默认未绑定，只在需要时自行设置。</p>
+<p>首次扫描中关图、缩放或切出游戏可能使本次结果不采用；两次扫描至少间隔 5 秒，超过 15 秒的结果不采用。
+有缓存时保留旧信息，关图或切出游戏时标注隐藏，回到完整地图后再显示。</p>
+<p>当前不支持局部地图随缩放跟踪。地图数据沿用 v0.10.5，不在线更新；完成状态不保证每个预测准确。</p>
+<p>地图信息包含剧透，请与队友确认适合使用。资源来自原项目及 Fuwish 的地图数据，详细来源见 NOTICE 和上游说明。</p>
+""")
     def capture_map_region(self):
         COLOR_MAP_REGION = "#4384b9"
         SCREENSHOT_WINDOW_CONFIG = {
@@ -1539,12 +1503,13 @@ class SettingsWindow(QWidget):
         os.startfile(log_dir)
 
     def open_about_dialog(self):
-        about_path = "manual.txt"
+        about_path = resource_path("manual.txt")
         with open(about_path, "r", encoding="utf-8") as f:
             about_text = f.read()
         msg = QMessageBox(self)
-        msg.setWindowTitle("关于")
-        msg.setText(about_text)
+        msg.setWindowTitle(f"{APP_FULLNAME} · 关于")
+        msg.setText(f"{APP_FULLNAME}\n基于 NeuraXmy/nightreign-overlay-helper v0.10.5 的非官方增强版。\n原作者：NeuraXmy；完整原版说明见详情。")
+        msg.setDetailedText(about_text)
         msg.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg.exec()
     

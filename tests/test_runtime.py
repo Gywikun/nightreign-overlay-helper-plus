@@ -127,6 +127,46 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(self.updater.current_phase,Phase.SECOND_CIRCLE_SHRINK)
         self.assertEqual(self.updater.phase_start_time,760)
 
+    def test_manual_refresh_reports_waits_completion_failure_and_reset(self):
+        snapshots = []
+        self.updater.diagnostics_signal.connect(snapshots.append)
+        self.updater.game_window = (0, 0, 960, 540)
+        self.updater._is_game_foreground = False
+        self.updater.submit_command('refresh_map')
+        self.updater.process_automation_commands()
+        self.updater.emit_diagnostics()
+        self.assertIn('切回游戏', snapshots[-1].get('refresh_request', ''))
+        self.updater._is_game_foreground = True
+        self.updater.map_region = None
+        self.updater.emit_diagnostics()
+        self.assertIn('定位', snapshots[-1]['refresh_request'])
+        self.updater.map_region = [0, 0, 750, 750]
+        self.updater.emit_diagnostics()
+        self.assertIn('完整地图', snapshots[-1]['refresh_request'])
+        self.tick_map(100)
+        self.updater.emit_diagnostics()
+        self.assertIn('稳定', snapshots[-1]['refresh_request'])
+        self.updater.map_policy.last_attempt = 98
+        self.updater.emit_diagnostics()
+        self.assertIn('3 秒', snapshots[-1]['refresh_request'])
+        self.tick_map(103.2)
+        self.assertEqual(self.updater.detector.matches, 1)
+        self.assertIn('扫描完成', snapshots[-1]['refresh_request'])
+        saved_cache = self.updater._map_cache
+        detect = self.updater.detector.detect
+        def fail_terrain(params):
+            if params.map_detect_param and params.map_detect_param.do_match_earth_shifting:
+                return SimpleNamespace(map_detect_result=SimpleNamespace(earth_shifting=None))
+            return detect(params)
+        self.updater.detector.detect = fail_terrain
+        self.updater.submit_command('refresh_map')
+        self.updater.process_automation_commands()
+        self.tick_map(110)
+        self.assertIn('本次更新未采用', snapshots[-1]['refresh_request'])
+        self.assertIs(self.updater._map_cache, saved_cache)
+        self.updater.start_day1()
+        self.assertEqual(snapshots[-1].get('refresh_request', ''), '')
+
     def test_saved_anchor_moves_without_recalibrating_old_absolute_region(self):
         self.updater.game_window=(0,0,960,540)
         self.updater.map_region=[544,85,372,372]
